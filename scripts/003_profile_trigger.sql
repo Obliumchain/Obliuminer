@@ -11,12 +11,15 @@ begin
   -- Generate unique referral code
   generated_code := 'REF-' || substr(new.id::text, 1, 8) || '-' || substr(md5(random()::text), 1, 4);
   
-  insert into public.profiles (id, first_name, last_name, referral_code)
+  -- Added 10,000 welcome points and mining start time for new users
+  insert into public.profiles (id, first_name, last_name, referral_code, points, mining_started_at)
   values (
     new.id,
     coalesce(new.raw_user_meta_data ->> 'first_name', null),
     coalesce(new.raw_user_meta_data ->> 'last_name', null),
-    generated_code
+    generated_code,
+    10000, -- Welcome bonus
+    now() -- Start mining timer immediately
   )
   on conflict (id) do nothing;
 

@@ -126,7 +126,7 @@ export default function DashboardPage() {
     try {
       const supabase = createClient()
 
-      let basePoints = Math.floor(Math.random() * 300) + 200
+      let basePoints = 400
 
       const multiplierBooster = activeBoosters.find((b) => b.type === "multiplier")
       if (multiplierBooster && multiplierBooster.multiplier_value) {
