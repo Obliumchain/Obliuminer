@@ -4,16 +4,14 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #02010a;
-  --foreground: #ffffff;
-  --card: #0f0f1a;
-  --card-foreground: #ffffff;
-  --primary: #00d9ff;
-  --secondary: #6366f1;
-  --accent: #10b981;
-  --muted: #64748b;
-  --muted-foreground: #94a3b8;
-  --border: rgba(255, 255, 255, 0.08);
+  --background: #0a0a0f;
+  --foreground: #e8e8f0;
+  --card: #151520;
+  --border: #2a2a3a;
+  --primary: #7dd3fc;
+  --secondary: #c0c5ce;
+  --accent: #60a5fa;
+  --success: #86efac;
   --radius: 16px;
 }
 
@@ -53,21 +51,26 @@
 }
 
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-orbitron);
+  --font-display: "Orbitron", sans-serif;
 
-  --color-background: #02010a;
-  --color-foreground: #eaeaea;
-  --color-primary: #00e0ff;
-  --color-secondary: #8a2be2;
-  --color-accent: #24e8c3;
-  --color-success: #41ff9f;
-  --color-error: #ff3f81;
-  --color-border: rgba(0, 224, 255, 0.2);
-  --color-card-bg: rgba(2, 1, 10, 0.7);
+  /* Metallic geometric color palette inspired by logo */
+  --color-background: #0a0a0f;
+  --color-foreground: #e8e8f0;
+  --color-card-bg: #151520;
 
-  --radius: 0.5rem;
+  /* Metallic silver/chrome accents */
+  --color-chrome: #c0c5ce;
+  --color-silver: #8b92a3;
+  --color-steel: #4a4f5e;
+  --color-obsidian: #1c1c28;
+
+  /* Accent for active states */
+  --color-primary: #7dd3fc;
+  --color-accent: #60a5fa;
+  --color-success: #86efac;
+  --color-border: #2a2a3a;
+
+  --radius: 0;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -109,12 +112,14 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    background: linear-gradient(135deg, #02010a 0%, #0a0015 50%, #02010a 100%);
+    font-family: "Inter", system-ui, sans-serif;
+    /* Updated background gradient to match intro site */
+    background: linear-gradient(135deg, #000000 0%, #0a0a1f 25%, #1a0a2e 50%, #0a0a1f 75%, #000000 100%);
     background-attachment: fixed;
   }
 
@@ -122,19 +127,7 @@
     @apply antialiased;
   }
 
-  /* Smooth animations */
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0px);
-      opacity: 0.15;
-    }
-    50% {
-      transform: translateY(-15px);
-      opacity: 0.25;
-    }
-  }
-
+  /* Geometric animations */
   @keyframes fade-in {
     from {
       opacity: 0;
@@ -155,95 +148,130 @@
     }
   }
 
-  @keyframes pulse-soft {
-    0%,
+  @keyframes metallic-shine {
+    0% {
+      background-position: -200% center;
+    }
     100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
+      background-position: 200% center;
     }
   }
 
-  @keyframes slide-in-bottom {
+  @keyframes geometric-rotate {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Added slide-down animation for mobile menu */
+  @keyframes slide-down {
     from {
-      transform: translateY(100%);
+      transform: translateY(-10px);
       opacity: 0;
     }
     to {
       transform: translateY(0);
       opacity: 1;
-    }
-  }
-
-  @keyframes fade-in-up {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes scale-in {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
     }
   }
 }
 
 @layer components {
-  /* New minimalist card design with subtle border and hover effects */
+  /* Metallic geometric card with angular design */
+  .card-modern {
+    @apply bg-card border border-border relative overflow-hidden;
+    clip-path: polygon(
+      0 8px,
+      8px 0,
+      calc(100% - 8px) 0,
+      100% 8px,
+      100% calc(100% - 8px),
+      calc(100% - 8px) 100%,
+      8px 100%,
+      0 calc(100% - 8px)
+    );
+  }
+
+  .card-modern::before {
+    content: "";
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300 pointer-events-none;
+    background: linear-gradient(135deg, transparent 0%, rgba(124, 211, 252, 0.1) 50%, transparent 100%);
+  }
+
+  .card-modern:hover::before {
+    @apply opacity-100;
+  }
+
+  /* Updated button base styles to use consistent sizing with inline-flex for proper height */
+  .btn-primary {
+    @apply inline-flex items-center justify-center font-bold uppercase tracking-wider;
+    @apply bg-gradient-to-r from-primary via-accent to-primary;
+    @apply text-background relative overflow-hidden;
+    @apply transition-all duration-300 active:scale-95;
+    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+    clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+    background-size: 200% auto;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-position: right center;
+    @apply shadow-lg shadow-primary/30;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center font-bold uppercase tracking-wider;
+    @apply border-2 border-secondary text-secondary;
+    @apply bg-transparent hover:bg-secondary/10;
+    @apply transition-all duration-300 active:scale-95;
+    clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+  }
+
+  /* Glass panel with metallic border */
   .glass-panel {
-    @apply bg-card/50 backdrop-blur-xl border border-border rounded-2xl;
-    @apply transition-all duration-300;
+    @apply bg-card/80 backdrop-blur-xl border border-border;
+    @apply relative;
+    clip-path: polygon(
+      0 12px,
+      12px 0,
+      calc(100% - 12px) 0,
+      100% 12px,
+      100% calc(100% - 12px),
+      calc(100% - 12px) 100%,
+      12px 100%,
+      0 calc(100% - 12px)
+    );
   }
 
-  .glass-panel:hover {
-    @apply border-primary/30;
-  }
-
-  /* Clean button styles without glowing effects */
-  .glow-btn {
-    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-200;
-    @apply bg-gradient-to-r from-primary to-primary/80;
-    @apply text-background hover:shadow-lg hover:shadow-primary/30;
-    @apply active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  /* Stat display with clean typography */
-  .glow-btn-secondary {
-    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-200;
-    @apply border border-primary/40 text-primary;
-    @apply hover:bg-primary/10 active:scale-95;
-  }
-
+  /* Metallic stat value styling */
   .stat-value {
-    @apply text-3xl font-bold text-foreground font-display;
+    @apply text-4xl font-bold bg-gradient-to-br from-chrome via-foreground to-silver bg-clip-text text-transparent;
+    font-family: "Orbitron", sans-serif;
   }
 
   .stat-label {
-    @apply text-sm text-muted-foreground uppercase tracking-wide;
+    @apply text-xs text-steel uppercase tracking-widest font-bold;
   }
 
   /* Animation utilities */
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
   .animate-fade-in {
     animation: fade-in 0.6s ease-out;
   }
 
   .animate-slide-up {
     animation: slide-up 0.5s ease-out;
+  }
+
+  .animate-metallic-shine {
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: metallic-shine 3s linear infinite;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
   }
 
   .animate-pulse-soft {
@@ -260,5 +288,10 @@
 
   .animate-scale-in {
     animation: scale-in 0.3s ease-out forwards;
+  }
+
+  /* Added animation utility for mobile menu */
+  .animate-slide-down {
+    animation: slide-down 0.3s ease-out;
   }
 }

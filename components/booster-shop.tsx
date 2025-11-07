@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { LiquidCard } from "@/components/ui/liquid-card"
 import { GlowButton } from "@/components/ui/glow-button"
+import { createBoosterPurchaseTransaction } from "@/lib/solana/transfer-token"
+import { RECIPIENT_WALLET, validateRecipientWallet } from "@/lib/solana/config"
 
 interface Booster {
   id: string
@@ -57,6 +59,11 @@ export function BoosterShop({ walletAddress, userId, onPurchaseSuccess }: Booste
       return
     }
 
+    if (!validateRecipientWallet()) {
+      setError("Payment system not configured. Please contact support.")
+      return
+    }
+
     setIsPurchasing(booster.id)
     setError(null)
 
@@ -64,21 +71,30 @@ export function BoosterShop({ walletAddress, userId, onPurchaseSuccess }: Booste
       const { solana } = window as any
 
       if (!solana?.isPhantom) {
-        throw new Error("Phantom wallet not found")
+        throw new Error("Phantom wallet not found. Please install Phantom wallet.")
       }
 
-      // TODO: Integrate with createBoosterPurchaseTransaction from lib/solana/transfer-token.ts
-      // For now, simulate a successful transaction
-      const mockTxHash = "SimulatedTxHash_" + Date.now()
+      console.log("[v0] Creating Solana transaction for", booster.price_sol, "SOL")
 
-      // Record purchase in database
+      const transaction = await createBoosterPurchaseTransaction(walletAddress, RECIPIENT_WALLET, booster.price_sol)
+
+      console.log("[v0] Requesting wallet signature...")
+
+      const { signature } = await solana.signAndSendTransaction(transaction)
+
+      console.log("[v0] Transaction signed with signature:", signature)
+
+      await solana.connection.confirmTransaction(signature, "confirmed")
+
+      console.log("[v0] Transaction confirmed. Recording purchase in database...")
+
       const response = await fetch("/api/boosters/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
           boosterId: booster.id,
-          walletTxHash: mockTxHash,
+          walletTxHash: signature,
           amountSol: booster.price_sol,
         }),
       })
@@ -89,6 +105,7 @@ export function BoosterShop({ walletAddress, userId, onPurchaseSuccess }: Booste
         throw new Error(result.error || "Purchase failed")
       }
 
+      console.log("[v0] Purchase successful:", result.message)
       setError(null)
       onPurchaseSuccess?.()
     } catch (err) {

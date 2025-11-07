@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
 import { LiquidCard } from "@/components/ui/liquid-card"
 import { GlowButton } from "@/components/ui/glow-button"
@@ -104,9 +105,7 @@ export default function AuthPage() {
       <div className="relative z-10 w-full max-w-md animate-fade-in">
         <LiquidCard className="p-8">
           <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/50">
-              <span className="text-xl font-display font-bold text-background">Ø</span>
-            </div>
+            <Image src="/logo.png" alt="Oblium Logo" width={64} height={64} className="mx-auto mb-4 drop-shadow-lg" />
             <h1 className="text-3xl font-display font-bold text-primary mb-2">OBLIUM</h1>
             <p className="text-foreground/60">{isSignUp ? "Create account" : "Enter the mining network"}</p>
           </div>
@@ -183,7 +182,7 @@ export default function AuthPage() {
               </div>
             )}
 
-            <GlowButton type="submit" disabled={isLoading} className="w-full mt-6">
+            <GlowButton type="submit" disabled={isLoading} className="w-full">
               {isLoading
                 ? isSignUp
                   ? "Creating account..."
