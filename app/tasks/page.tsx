@@ -7,6 +7,7 @@ import { GlowButton } from "@/components/ui/glow-button"
 import { BackgroundAnimation } from "@/components/background-animation"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { useLanguage } from "@/lib/language-context"
 
 interface Task {
   id: string
@@ -25,6 +26,7 @@ export default function TasksPage() {
   const [completingTask, setCompletingTask] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+  const { t } = useLanguage()
 
   useEffect(() => {
     loadTasks()
@@ -112,7 +114,7 @@ export default function TasksPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-[#0a0015] to-background flex items-center justify-center">
         <BackgroundAnimation />
-        <div className="text-primary text-xl">Loading tasks...</div>
+        <div className="text-primary text-xl">{t("loadingTasks")}</div>
       </div>
     )
   }
@@ -125,24 +127,24 @@ export default function TasksPage() {
       {/* Main Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-display font-bold text-primary mb-2">Tasks & Rewards</h1>
-          <p className="text-foreground/60">Complete missions for bonus points</p>
+          <h1 className="text-4xl font-display font-bold text-primary mb-2">{t("tasksTitle")}</h1>
+          <p className="text-foreground/60">{t("tasksSubtitle")}</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <LiquidCard className="p-6 text-center">
-            <div className="text-foreground/60 text-sm mb-2">Completed</div>
+            <div className="text-foreground/60 text-sm mb-2">{t("completedLabel")}</div>
             <div className="text-4xl font-display font-bold text-success">
               {completedCount}/{tasks.length}
             </div>
           </LiquidCard>
           <LiquidCard className="p-6 text-center">
-            <div className="text-foreground/60 text-sm mb-2">Points Earned</div>
+            <div className="text-foreground/60 text-sm mb-2">{t("pointsEarned")}</div>
             <div className="text-4xl font-display font-bold text-primary">{totalReward}</div>
           </LiquidCard>
           <LiquidCard className="p-6 text-center">
-            <div className="text-foreground/60 text-sm mb-2">Potential Reward</div>
+            <div className="text-foreground/60 text-sm mb-2">{t("potentialReward")}</div>
             <div className="text-4xl font-display font-bold text-accent">
               {tasks.reduce((sum, task) => sum + (task.completed ? 0 : task.reward), 0)}
             </div>
@@ -176,14 +178,14 @@ export default function TasksPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-primary font-display font-bold text-xl">{task.reward}</span>
-                  <span className="text-foreground/60 text-xs">pts</span>
+                  <span className="text-foreground/60 text-xs">{t("pts")}</span>
                 </div>
                 {!task.completed && (
                   <GlowButton
                     onClick={() => handleCompleteTask(task.id, task.action_url)}
                     disabled={completingTask === task.id}
                   >
-                    {completingTask === task.id ? "Processing..." : "Complete"}
+                    {completingTask === task.id ? t("processing") : t("complete")}
                   </GlowButton>
                 )}
               </div>

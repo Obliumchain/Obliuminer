@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   connectPhantomWallet,
   disconnectPhantomWallet,
@@ -24,15 +24,48 @@ export function WalletConnectButton({
 }: WalletConnectButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isPhantomInstalled, setIsPhantomInstalled] = useState<boolean | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const checkPhantom = () => {
+      const hasPhantom = !!((window as any).solana?.isPhantom || (window as any).phantom?.solana?.isPhantom)
+      setIsPhantomInstalled(hasPhantom)
+    }
+
+    checkPhantom()
+
+    const timers = [setTimeout(checkPhantom, 500), setTimeout(checkPhantom, 1000), setTimeout(checkPhantom, 2000)]
+
+    return () => timers.forEach(clearTimeout)
+  }, [])
 
   const handleConnect = async () => {
     setIsLoading(true)
     setError(null)
+    setSuccessMessage(null)
 
     try {
       const wallet = await connectPhantomWallet()
       if (wallet) {
-        onConnect?.(wallet)
+        const response = await fetch("/api/wallet/connect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet_address: wallet.address }),
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          if (data.bonus_awarded > 0) {
+            setSuccessMessage(`Wallet connected! You earned ${data.bonus_awarded} points! 🎉`)
+          } else {
+            setSuccessMessage("Wallet connected successfully!")
+          }
+          onConnect?.(wallet)
+        } else {
+          setError(data.error || "Failed to save wallet connection")
+        }
       } else {
         setError("Failed to connect wallet. Please try again.")
       }
@@ -45,6 +78,7 @@ export function WalletConnectButton({
 
   const handleDisconnect = async () => {
     setIsLoading(true)
+    setError(null)
     try {
       await disconnectPhantomWallet()
       onDisconnect?.()
@@ -74,9 +108,35 @@ export function WalletConnectButton({
 
   return (
     <div className="space-y-2">
-      <GlowButton onClick={handleConnect} disabled={isLoading} variant={variant} className="w-full">
+      {isPhantomInstalled === false && (
+        <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg mb-2">
+          <p className="text-xs text-cyan-400 mb-2">Phantom wallet not detected</p>
+          <a
+            href="https://phantom.app/download"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-cyan-300 underline hover:text-cyan-200"
+          >
+            Install Phantom Wallet →
+          </a>
+        </div>
+      )}
+
+      <GlowButton
+        onClick={handleConnect}
+        disabled={isLoading || isPhantomInstalled === false}
+        variant={variant}
+        className="w-full"
+      >
         {isLoading ? "Connecting..." : "Connect Phantom Wallet"}
       </GlowButton>
+
+      {successMessage && (
+        <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+          <p className="text-xs text-green-400">{successMessage}</p>
+        </div>
+      )}
+
       {error && (
         <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
           <p className="text-xs text-red-400">{error}</p>

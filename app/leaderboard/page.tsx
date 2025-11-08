@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Navigation } from "@/components/navigation"
 import { LiquidCard } from "@/components/ui/liquid-card"
 import { BackgroundAnimation } from "@/components/background-animation"
+import { useLanguage } from "@/lib/language-context"
 
 interface LeaderboardEntry {
   rank: number
@@ -17,6 +18,7 @@ interface LeaderboardEntry {
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const { t } = useLanguage()
 
   useEffect(() => {
     const loadLeaderboard = async () => {
@@ -74,7 +76,7 @@ export default function LeaderboardPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-[#0a0015] to-background flex items-center justify-center">
         <BackgroundAnimation />
-        <div className="text-primary text-lg">Loading leaderboard...</div>
+        <div className="text-primary text-lg">{t("loadingLeaderboard")}</div>
       </div>
     )
   }
@@ -86,8 +88,8 @@ export default function LeaderboardPage() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-display font-bold text-primary mb-2">Global Leaderboard</h1>
-          <p className="text-foreground/60">Top miners by points and referrals</p>
+          <h1 className="text-4xl font-display font-bold text-primary mb-2">{t("leaderboardTitle")}</h1>
+          <p className="text-foreground/60">{t("leaderboardSubtitle")}</p>
         </div>
 
         {/* Top 3 Podium */}
@@ -112,14 +114,14 @@ export default function LeaderboardPage() {
                     <h3 className="text-2xl font-display font-bold text-foreground mb-4">{entry.nickname}</h3>
 
                     <div className="mb-4">
-                      <div className="text-foreground/60 text-xs mb-1">Points</div>
+                      <div className="text-foreground/60 text-xs mb-1">{t("points")}</div>
                       <div className="text-3xl font-display font-black text-primary">
                         {entry.points >= 1000 ? `${(entry.points / 1000).toFixed(1)}K` : entry.points}
                       </div>
                     </div>
 
                     <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg">
-                      <div className="text-foreground/60 text-xs mb-1">Referrals</div>
+                      <div className="text-foreground/60 text-xs mb-1">{t("referrals")}</div>
                       <div className="text-xl font-display font-bold text-accent">{entry.referrals}</div>
                     </div>
                   </div>
@@ -131,20 +133,26 @@ export default function LeaderboardPage() {
 
         {/* Full Leaderboard */}
         <LiquidCard className="p-8 overflow-x-auto">
-          <h2 className="text-2xl font-display font-bold text-primary mb-6">Full Rankings</h2>
+          <h2 className="text-2xl font-display font-bold text-primary mb-6">{t("fullRankings")}</h2>
 
           {leaderboard.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-foreground/60">No miners yet. Be the first to start mining!</p>
+              <p className="text-foreground/60">{t("noMinersYet")}</p>
             </div>
           ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-4 px-4 font-display font-bold text-foreground/60 text-sm">Rank</th>
-                  <th className="text-left py-4 px-4 font-display font-bold text-foreground/60 text-sm">Miner</th>
-                  <th className="text-right py-4 px-4 font-display font-bold text-foreground/60 text-sm">Points</th>
-                  <th className="text-right py-4 px-4 font-display font-bold text-foreground/60 text-sm">Referrals</th>
+                  <th className="text-left py-4 px-4 font-display font-bold text-foreground/60 text-sm">{t("rank")}</th>
+                  <th className="text-left py-4 px-4 font-display font-bold text-foreground/60 text-sm">
+                    {t("miner")}
+                  </th>
+                  <th className="text-right py-4 px-4 font-display font-bold text-foreground/60 text-sm">
+                    {t("points")}
+                  </th>
+                  <th className="text-right py-4 px-4 font-display font-bold text-foreground/60 text-sm">
+                    {t("referrals")}
+                  </th>
                 </tr>
               </thead>
               <tbody>

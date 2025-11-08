@@ -3,12 +3,16 @@ CREATE TABLE IF NOT EXISTS conversion_history (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   points_converted INTEGER NOT NULL,
-  obl_tokens_received NUMERIC(10, 2) NOT NULL,
-  conversion_rate NUMERIC(10, 2) NOT NULL, -- e.g., 10000 points = 200 OBL
+  oblm_tokens_received NUMERIC(10, 2) NOT NULL,
+  conversion_rate NUMERIC(10, 2) NOT NULL, -- e.g., 10000 points = 200 OBLM
   status TEXT DEFAULT 'completed' CHECK (status IN ('completed', 'pending', 'failed')),
   wallet_tx_hash TEXT, -- Solana transaction hash if tokens were sent
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Drop indexes if they exist before creating them to prevent errors
+DROP INDEX IF EXISTS idx_conversion_history_user_id;
+DROP INDEX IF EXISTS idx_conversion_history_created_at;
 
 -- Create index for faster queries
 CREATE INDEX idx_conversion_history_user_id ON conversion_history(user_id);

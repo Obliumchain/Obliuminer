@@ -4,11 +4,19 @@ import Link from "next/link"
 import Image from "next/image"
 import { GlowButton } from "@/components/ui/glow-button"
 import { BackgroundAnimation } from "@/components/background-animation"
+import { useLanguage } from "@/lib/language-context"
+import { LanguageSelector } from "@/components/language-selector"
 
 export default function WelcomePage() {
+  const { t } = useLanguage()
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-[#0a0015] to-background overflow-hidden">
       <BackgroundAnimation />
+
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSelector />
+      </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
         <div className="text-center animate-fade-in">
@@ -24,11 +32,8 @@ export default function WelcomePage() {
 
           {/* Tagline */}
           <div className="mb-12 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            <h2 className="text-xl md:text-3xl font-display mb-4 text-foreground/80">Mine. Earn. Ascend.</h2>
-            <p className="text-lg text-foreground/60 max-w-xl mx-auto leading-relaxed">
-              Enter the future of crypto mining. Accumulate points through dedicated mining, complete tasks, and convert
-              them to OBL tokens on the Solana blockchain.
-            </p>
+            <h2 className="text-xl md:text-3xl font-display mb-4 text-foreground/80">{t("welcomeTagline")}</h2>
+            <p className="text-lg text-foreground/60 max-w-xl mx-auto leading-relaxed">{t("welcomeDesc")}</p>
           </div>
 
           {/* CTA Buttons */}
@@ -37,10 +42,10 @@ export default function WelcomePage() {
             style={{ animationDelay: "0.2s" }}
           >
             <Link href="/auth">
-              <GlowButton>Start Mining</GlowButton>
+              <GlowButton>{t("startMining")}</GlowButton>
             </Link>
             <button className="px-8 py-4 text-lg font-display font-bold rounded-lg border-2 border-primary text-primary hover:bg-primary/10 transition-all duration-300">
-              Learn More
+              {t("learnMore")}
             </button>
           </div>
 
@@ -50,9 +55,9 @@ export default function WelcomePage() {
             style={{ animationDelay: "0.3s" }}
           >
             {[
-              { icon: "⛏️", title: "Mine Points", desc: "Claim every 4 hours" },
-              { icon: "🎯", title: "Earn Rewards", desc: "Complete tasks & referrals" },
-              { icon: "✨", title: "Convert to OBL", desc: "Every 30 days automatically" },
+              { icon: "⛏️", title: t("minePoints"), desc: t("minePointsDesc") },
+              { icon: "🎯", title: t("earnRewards"), desc: t("earnRewardsDesc") },
+              { icon: "✨", title: t("convertToOBLM"), desc: t("convertToOBLMDesc") },
             ].map((feature, i) => (
               <div
                 key={i}

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -9,6 +8,8 @@ import { createClient } from "@/lib/supabase/client"
 import { LiquidCard } from "@/components/ui/liquid-card"
 import { GlowButton } from "@/components/ui/glow-button"
 import { BackgroundAnimation } from "@/components/background-animation"
+import { useLanguage } from "@/lib/language-context"
+import { LanguageSelector } from "@/components/language-selector"
 
 export default function AuthPage() {
   const router = useRouter()
@@ -20,6 +21,7 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSignUp, setIsSignUp] = useState(false)
   const [repeatPassword, setRepeatPassword] = useState("")
+  const { t } = useLanguage()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,7 +46,6 @@ export default function AuthPage() {
           options: {
             emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
             data: {
-              referral_code: referralCode,
               nickname: nickname.trim(),
             },
           },
@@ -52,32 +53,23 @@ export default function AuthPage() {
 
         if (signUpError) throw signUpError
 
-        if (data.user) {
-          const { error: profileError } = await supabase.from("profiles").insert({
-            id: data.user.id,
-            nickname: nickname.trim(),
-            created_at: new Date().toISOString(),
-          })
+        if (data.user && referralCode.trim()) {
+          try {
+            const response = await fetch("/api/referral/process", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ referralCode: referralCode.trim() }),
+            })
 
-          if (profileError && !profileError.message.includes("duplicate")) {
-            console.error("[v0] Profile creation error:", profileError)
-          }
-        }
+            const result = await response.json()
 
-        if (referralCode.trim()) {
-          const { data: referrer } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("referral_code", referralCode)
-            .single()
-
-          if (referrer) {
-            if (data.user) {
-              await supabase.from("referrals").insert({
-                referrer_id: referrer.id,
-                referred_user_id: data.user.id,
-              })
+            if (!response.ok) {
+              console.error("[v0] Referral processing failed:", result.error)
             }
+          } catch (referralError) {
+            console.error("[v0] Referral processing error:", referralError)
           }
         }
 
@@ -102,22 +94,26 @@ export default function AuthPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-[#0a0015] to-background overflow-hidden flex items-center justify-center px-4">
       <BackgroundAnimation />
 
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSelector />
+      </div>
+
       <div className="relative z-10 w-full max-w-md animate-fade-in">
         <LiquidCard className="p-8">
           <div className="text-center mb-8">
             <Image src="/logo.png" alt="Oblium Logo" width={64} height={64} className="mx-auto mb-4 drop-shadow-lg" />
             <h1 className="text-3xl font-display font-bold text-primary mb-2">OBLIUM</h1>
-            <p className="text-foreground/60">{isSignUp ? "Create account" : "Enter the mining network"}</p>
+            <p className="text-foreground/60">{isSignUp ? t("createAccount") : t("enterMiningNetwork")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-foreground/80 mb-2">Email</label>
+              <label className="block text-sm font-bold text-foreground/80 mb-2">{t("email")}</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                placeholder={t("emailPlaceholder")}
                 className="w-full px-4 py-3 bg-background/50 border border-primary/30 rounded-lg text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary focus:shadow-lg focus:shadow-primary/20 transition-all duration-300"
                 required
               />
@@ -125,12 +121,12 @@ export default function AuthPage() {
 
             {isSignUp && (
               <div>
-                <label className="block text-sm font-bold text-foreground/80 mb-2">Nickname</label>
+                <label className="block text-sm font-bold text-foreground/80 mb-2">{t("nickname")}</label>
                 <input
                   type="text"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
-                  placeholder="Your mining identity"
+                  placeholder={t("nicknamePlaceholder")}
                   className="w-full px-4 py-3 bg-background/50 border border-primary/30 rounded-lg text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary focus:shadow-lg focus:shadow-primary/20 transition-all duration-300"
                   required
                 />
@@ -138,12 +134,12 @@ export default function AuthPage() {
             )}
 
             <div>
-              <label className="block text-sm font-bold text-foreground/80 mb-2">Password</label>
+              <label className="block text-sm font-bold text-foreground/80 mb-2">{t("password")}</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder={t("passwordPlaceholder")}
                 className="w-full px-4 py-3 bg-background/50 border border-primary/30 rounded-lg text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary focus:shadow-lg focus:shadow-primary/20 transition-all duration-300"
                 required
               />
@@ -151,12 +147,12 @@ export default function AuthPage() {
 
             {isSignUp && (
               <div>
-                <label className="block text-sm font-bold text-foreground/80 mb-2">Repeat Password</label>
+                <label className="block text-sm font-bold text-foreground/80 mb-2">{t("repeatPassword")}</label>
                 <input
                   type="password"
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={t("passwordPlaceholder")}
                   className="w-full px-4 py-3 bg-background/50 border border-primary/30 rounded-lg text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary focus:shadow-lg focus:shadow-primary/20 transition-all duration-300"
                   required
                 />
@@ -165,12 +161,12 @@ export default function AuthPage() {
 
             {isSignUp && (
               <div>
-                <label className="block text-sm font-bold text-foreground/80 mb-2">Referral Code (Optional)</label>
+                <label className="block text-sm font-bold text-foreground/80 mb-2">{t("referralCodeOptional")}</label>
                 <input
                   type="text"
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value)}
-                  placeholder="e.g., REF-ABC12345"
+                  placeholder={t("referralCodePlaceholder")}
                   className="w-full px-4 py-3 bg-background/50 border border-accent/30 rounded-lg text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-accent focus:shadow-lg focus:shadow-accent/20 transition-all duration-300"
                 />
               </div>
@@ -185,16 +181,16 @@ export default function AuthPage() {
             <GlowButton type="submit" disabled={isLoading} className="w-full">
               {isLoading
                 ? isSignUp
-                  ? "Creating account..."
-                  : "Connecting..."
+                  ? t("creatingAccount")
+                  : t("connecting")
                 : isSignUp
-                  ? "Create Account"
-                  : "Start Mining"}
+                  ? t("createAccount")
+                  : t("startMining")}
             </GlowButton>
           </form>
 
           <div className="text-center text-sm text-foreground/60 mt-6">
-            {isSignUp ? "Already have an account? " : "New to Oblium? "}
+            {isSignUp ? t("alreadyHaveAccount") : t("newToOblium")}{" "}
             <button
               onClick={() => {
                 setIsSignUp(!isSignUp)
@@ -202,13 +198,13 @@ export default function AuthPage() {
               }}
               className="text-primary hover:underline font-bold"
             >
-              {isSignUp ? "Sign In" : "Create Account"}
+              {isSignUp ? t("signIn") : t("createAccount")}
             </button>
           </div>
 
           {isSignUp && (
             <div className="mt-4 p-3 bg-accent/10 border border-accent/30 rounded-lg">
-              <p className="text-xs text-accent/80">A confirmation email will be sent to verify your account.</p>
+              <p className="text-xs text-accent/80">{t("confirmationEmailSent")}</p>
             </div>
           )}
         </LiquidCard>

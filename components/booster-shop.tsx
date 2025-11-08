@@ -6,6 +6,7 @@ import { LiquidCard } from "@/components/ui/liquid-card"
 import { GlowButton } from "@/components/ui/glow-button"
 import { createBoosterPurchaseTransaction } from "@/lib/solana/transfer-token"
 import { RECIPIENT_WALLET, validateRecipientWallet } from "@/lib/solana/config"
+import { useLanguage } from "@/lib/language-context"
 
 interface Booster {
   id: string
@@ -28,14 +29,21 @@ export function BoosterShop({ walletAddress, userId, onPurchaseSuccess }: Booste
   const [isLoading, setIsLoading] = useState(true)
   const [isPurchasing, setIsPurchasing] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { t } = useLanguage()
 
   useEffect(() => {
     const loadBoosters = async () => {
       try {
+        console.log("[v0] Loading boosters from database...")
         const supabase = createClient()
         const { data, error: fetchError } = await supabase.from("boosters").select("*").eq("active", true)
 
-        if (fetchError) throw fetchError
+        if (fetchError) {
+          console.error("[v0] Error fetching boosters:", fetchError)
+          throw fetchError
+        }
+
+        console.log("[v0] Boosters loaded:", data?.length || 0, "items")
         setBoosters(data || [])
       } catch (err) {
         console.error("[v0] Error loading boosters:", err)
@@ -118,7 +126,16 @@ export function BoosterShop({ walletAddress, userId, onPurchaseSuccess }: Booste
   }
 
   if (isLoading) {
-    return <div className="text-foreground/60">Loading boosters...</div>
+    return <div className="text-foreground/60">{t("loadingBoosters")}</div>
+  }
+
+  if (boosters.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-foreground/60 mb-4">{t("noBoostersAvailable")}</p>
+        <p className="text-xs text-foreground/40">{t("boostersWillAppear")}</p>
+      </div>
+    )
   }
 
   return (
@@ -143,14 +160,18 @@ export function BoosterShop({ walletAddress, userId, onPurchaseSuccess }: Booste
               </div>
               <p className="text-sm text-foreground/60 mb-4">{booster.description}</p>
               <div className="space-y-2 text-xs text-foreground/50">
-                <p>Duration: {booster.duration_hours}h</p>
-                <p>Type: {booster.type}</p>
+                <p>
+                  {t("duration")}: {booster.duration_hours}h
+                </p>
+                <p>
+                  {t("type")}: {booster.type}
+                </p>
               </div>
             </div>
 
             <div className="space-y-3 pt-4 border-t border-border">
               <div className="flex items-center justify-between">
-                <span className="text-foreground/60 text-sm">Price</span>
+                <span className="text-foreground/60 text-sm">{t("price")}</span>
                 <span className="font-display font-bold text-primary">{booster.price_sol} SOL</span>
               </div>
 
@@ -159,8 +180,10 @@ export function BoosterShop({ walletAddress, userId, onPurchaseSuccess }: Booste
                 disabled={isPurchasing === booster.id || !walletAddress}
                 className="w-full"
               >
-                {isPurchasing === booster.id ? "Processing..." : "Buy Now"}
+                {isPurchasing === booster.id ? t("processing") : t("buyNow")}
               </GlowButton>
+
+              {!walletAddress && <p className="text-xs text-center text-foreground/40">{t("connectWalletToBuy")}</p>}
             </div>
           </LiquidCard>
         ))}

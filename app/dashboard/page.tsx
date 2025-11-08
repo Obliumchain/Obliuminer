@@ -9,6 +9,8 @@ import { GlowButton } from "@/components/ui/glow-button"
 import { CountdownTimer } from "@/components/ui/countdown-timer"
 import { BackgroundAnimation } from "@/components/background-animation"
 import { BoosterShop } from "@/components/booster-shop"
+import { WalletConnectButton } from "@/components/wallet-connect-button"
+import { useLanguage } from "@/lib/language-context"
 
 interface UserProfile {
   id: string
@@ -30,15 +32,17 @@ interface ActiveBooster {
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [nextClaim, setNextClaim] = useState<Date | null>(null)
   const [canClaim, setCanClaim] = useState(false)
-  const [obl, setObl] = useState(0)
+  const [oblm, setOblm] = useState(0)
   const [activeBoosters, setActiveBoosters] = useState<ActiveBooster[]>([])
   const [showBoosterShop, setShowBoosterShop] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isClaiming, setIsClaiming] = useState(false)
   const [referralCopied, setReferralCopied] = useState(false)
+  const [showWalletNotification, setShowWalletNotification] = useState(false)
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -59,7 +63,7 @@ export default function DashboardPage() {
 
         setUserProfile(profile)
 
-        setObl(Math.floor(profile.points / 10000) * 200)
+        setOblm(Math.floor(profile.points / 10000) * 200)
 
         if (profile.mining_started_at) {
           const miningStart = new Date(profile.mining_started_at)
@@ -147,7 +151,7 @@ export default function DashboardPage() {
 
       if (!error) {
         setUserProfile({ ...userProfile, points: newPoints })
-        setObl(Math.floor(newPoints / 10000) * 200)
+        setOblm(Math.floor(newPoints / 10000) * 200)
 
         const fourHoursLater = new Date(now.getTime() + 4 * 60 * 60 * 1000)
         setNextClaim(fourHoursLater)
@@ -199,6 +203,25 @@ export default function DashboardPage() {
     }
   }
 
+  const handleWalletConnect = async (wallet: any) => {
+    const supabase = createClient()
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", userProfile?.id).single()
+
+    if (profile) {
+      setUserProfile(profile)
+      setOblm(Math.floor(profile.points / 10000) * 200)
+    }
+  }
+
+  const handleBrowseBoostersClick = () => {
+    if (!userProfile?.wallet_address) {
+      setShowWalletNotification(true)
+      setTimeout(() => setShowWalletNotification(false), 3000)
+      return
+    }
+    setShowBoosterShop(!showBoosterShop)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-[#0a0015] to-background flex items-center justify-center">
@@ -213,10 +236,24 @@ export default function DashboardPage() {
       <BackgroundAnimation />
       <Navigation />
 
+      {showWalletNotification && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top">
+          <LiquidCard className="p-4 bg-yellow-500/20 border-yellow-500/50">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <p className="text-foreground font-bold text-sm mb-1">{t("walletRequired")}</p>
+                <p className="text-foreground/70 text-xs">{t("walletRequiredDesc")}</p>
+              </div>
+            </div>
+          </LiquidCard>
+        </div>
+      )}
+
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <LiquidCard className="p-8 text-center">
-            <div className="text-foreground/60 text-sm mb-2">Total Points</div>
+            <div className="text-foreground/60 text-sm mb-2">{t("totalPoints")}</div>
             <div className="text-5xl font-display font-black text-primary mb-2">
               {userProfile?.points.toLocaleString() || 0}
             </div>
@@ -224,33 +261,35 @@ export default function DashboardPage() {
           </LiquidCard>
 
           <LiquidCard className="p-8 text-center">
-            <div className="text-foreground/60 text-sm mb-2">OBL Tokens</div>
-            <div className="text-5xl font-display font-black text-accent">{obl}</div>
+            <div className="text-foreground/60 text-sm mb-2">{t("oblmTokens")}</div>
+            <div className="text-5xl font-display font-black text-accent">{oblm}</div>
             <div className="h-1 bg-gradient-to-r from-accent to-primary rounded-full mt-4" />
           </LiquidCard>
 
           <LiquidCard className="p-8 text-center">
-            <div className="text-foreground/60 text-sm mb-2">Conversion Status</div>
-            <div className="text-lg font-display font-bold text-success mb-4">Active</div>
-            <div className="text-xs text-foreground/60">Auto-convert in 30 days</div>
+            <div className="text-foreground/60 text-sm mb-2">{t("conversionStatus")}</div>
+            <div className="text-lg font-display font-bold text-success mb-4">{t("active")}</div>
+            <div className="text-xs text-foreground/60">{t("autoConvert")}</div>
           </LiquidCard>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <LiquidCard className="lg:col-span-2 p-8">
-            <h2 className="text-2xl font-display font-bold text-primary mb-6">Mining Panel</h2>
+            <h2 className="text-2xl font-display font-bold text-primary mb-6">{t("miningPanel")}</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <div className="text-foreground/60 text-sm mb-4">
-                  {canClaim ? "Ready to Claim!" : "Next Claim Available In:"}
-                </div>
+                <div className="text-foreground/60 text-sm mb-4">{canClaim ? t("readyToClaim") : t("nextClaimIn")}</div>
                 {nextClaim && !canClaim && <CountdownTimer targetTime={nextClaim} />}
-                {canClaim && <div className="text-3xl font-display font-bold text-success animate-pulse">READY ⚡</div>}
+                {canClaim && (
+                  <div className="text-3xl font-display font-bold text-success animate-pulse">{t("ready")} ⚡</div>
+                )}
               </div>
 
               <div>
-                <div className="text-foreground/60 text-sm mb-4">Active Boosters ({activeBoosters.length})</div>
+                <div className="text-foreground/60 text-sm mb-4">
+                  {t("activeBoosters")} ({activeBoosters.length})
+                </div>
                 {activeBoosters.length > 0 ? (
                   <div className="space-y-2">
                     {activeBoosters.map((booster) => (
@@ -259,13 +298,13 @@ export default function DashboardPage() {
                         className="flex items-center justify-between p-3 bg-success/10 border border-success/30 rounded-lg"
                       >
                         <span className="text-foreground text-sm">{booster.name}</span>
-                        <span className="text-success text-xs font-bold">ACTIVE</span>
+                        <span className="text-success text-xs font-bold">{t("active").toUpperCase()}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="p-3 bg-foreground/5 border border-foreground/10 rounded-lg text-xs text-foreground/60 text-center">
-                    No active boosters
+                    {t("noActiveBoosters")}
                   </div>
                 )}
               </div>
@@ -273,42 +312,39 @@ export default function DashboardPage() {
 
             <div className="mt-8">
               <GlowButton onClick={handleClaim} className="w-full" disabled={!canClaim || isClaiming}>
-                {isClaiming ? "Claiming..." : canClaim ? "⚡ Claim Points" : "⏱ Mining in Progress"}
+                {isClaiming ? t("claiming") : canClaim ? `⚡ ${t("claimPoints")}` : `⏱ ${t("miningInProgress")}`}
               </GlowButton>
               {userProfile?.has_auto_claim && (
-                <p className="text-xs text-center text-success mt-2">
-                  Auto-claim enabled - points will be claimed automatically
-                </p>
+                <p className="text-xs text-center text-success mt-2">{t("autoClaimEnabled")}</p>
               )}
             </div>
           </LiquidCard>
 
           <LiquidCard className="p-8 flex flex-col">
-            <h2 className="text-xl font-display font-bold text-secondary mb-6">Boosters</h2>
+            <h2 className="text-xl font-display font-bold text-secondary mb-6">{t("boosters")}</h2>
 
             <div className="flex-grow mb-6">
               <div className="p-4 bg-secondary/10 border border-secondary/30 rounded-lg mb-4">
-                <div className="text-xs text-foreground/60 mb-1">Starting from</div>
+                <div className="text-xs text-foreground/60 mb-1">{t("startingFrom")}</div>
                 <div className="text-2xl font-display font-bold text-secondary">0.03 SOL</div>
               </div>
-              <p className="text-sm text-foreground/60">Unlock mining multipliers and auto-claim features</p>
+              <p className="text-sm text-foreground/60">{t("unlockMultipliers")}</p>
             </div>
 
-            <GlowButton
-              onClick={() => setShowBoosterShop(!showBoosterShop)}
-              variant="secondary"
-              className="w-full"
-              disabled={!userProfile?.wallet_address}
-            >
-              {showBoosterShop ? "Hide Shop" : "Browse Boosters"}
+            <GlowButton onClick={handleBrowseBoostersClick} variant="secondary" className="w-full">
+              {showBoosterShop ? t("hideShop") : t("browseBoosters")}
             </GlowButton>
+
+            {!userProfile?.wallet_address && (
+              <p className="text-xs text-center text-foreground/40 mt-2">{t("connectWalletToPurchase")}</p>
+            )}
           </LiquidCard>
         </div>
 
         {showBoosterShop && (
           <LiquidCard className="p-8 mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-display font-bold text-primary">Booster Shop</h2>
+              <h2 className="text-2xl font-display font-bold text-primary">{t("boosterShop")}</h2>
               <button
                 onClick={() => setShowBoosterShop(false)}
                 className="text-foreground/60 hover:text-foreground transition"
@@ -326,55 +362,32 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <LiquidCard className="p-8">
-            <h2 className="text-xl font-display font-bold text-accent mb-6">Wallet Connection</h2>
-            {userProfile?.wallet_address ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-accent/10 border border-accent/30 rounded-lg">
-                  <div className="text-xs text-foreground/60 mb-1">Connected Address</div>
-                  <div className="text-sm font-mono text-accent">
-                    {userProfile.wallet_address.slice(0, 6)}...{userProfile.wallet_address.slice(-6)}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-foreground/60 text-sm">Connect your wallet to purchase boosters</p>
+            <h2 className="text-xl font-display font-bold text-accent mb-6">{t("walletConnection")}</h2>
+            <WalletConnectButton
+              walletAddress={userProfile?.wallet_address}
+              onConnect={handleWalletConnect}
+              variant="accent"
+            />
+            {!userProfile?.wallet_address && (
+              <p className="text-foreground/60 text-sm mt-4">{t("connectWalletBonus")}</p>
             )}
-          </LiquidCard>
-
-          <LiquidCard className="p-8">
-            <h2 className="text-xl font-display font-bold text-success mb-6">Conversion Schedule</h2>
-            <div className="space-y-4">
-              <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
-                <div className="text-sm text-foreground/60 mb-1">Conversion Rate</div>
-                <div className="text-2xl font-display font-bold text-success">10,000 Points = 200 OBL</div>
-              </div>
-              <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
-                <div className="text-sm text-foreground/60 mb-1">Last Conversion</div>
-                <div className="text-lg font-bold text-foreground">30 days ago</div>
-              </div>
-              <div className="p-2 bg-foreground/5 border border-foreground/10 rounded-lg text-xs text-foreground/60 text-center">
-                Automatic conversion every 30 days
-              </div>
-            </div>
           </LiquidCard>
         </div>
 
         <LiquidCard className="p-8 mt-6">
-          <h2 className="text-xl font-display font-bold text-accent mb-6">Refer Friends & Earn</h2>
+          <h2 className="text-xl font-display font-bold text-accent mb-6">{t("referFriends")}</h2>
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="flex-1">
-              <p className="text-foreground/60 text-sm mb-4">
-                Share your referral code with friends and earn bonus points when they sign up!
-              </p>
+              <p className="text-foreground/60 text-sm mb-4">{t("referFriendsDesc")}</p>
               <div className="p-4 bg-accent/10 border border-accent/30 rounded-lg">
-                <div className="text-xs text-foreground/60 mb-2">Your Referral Code</div>
+                <div className="text-xs text-foreground/60 mb-2">{t("yourReferralCode")}</div>
                 <div className="text-2xl font-display font-bold text-accent">
                   {userProfile?.referral_code || "Loading..."}
                 </div>
               </div>
             </div>
             <GlowButton onClick={copyReferral} className="w-full md:w-auto" variant="accent">
-              {referralCopied ? "✓ Copied!" : "Copy Code"}
+              {referralCopied ? `✓ ${t("copied")}` : t("copyCode")}
             </GlowButton>
           </div>
         </LiquidCard>
